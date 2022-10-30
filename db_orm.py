@@ -63,6 +63,8 @@ class DataBase(ABC):
         list_of_objects = []
         for tup in list_of_tuples:
             list_of_objects.append(cls.named_tuple(*tup))
+        if len(list_of_objects) == 1:
+            return list_of_objects[0]
         return list_of_objects
 
     @abstractmethod
@@ -90,6 +92,10 @@ class User(DataBase):
             f'''INSERT INTO users (name, email, password, id)
             VALUES ('{self.name}', '{self.email}', '{self.password}', {self.id});'''
         )
+
+    @staticmethod
+    def check_password(password, hash_password):
+        return bcrypt.checkpw(password.encode(), bytes.fromhex(hash_password))
 
 
 class Product(DataBase):
