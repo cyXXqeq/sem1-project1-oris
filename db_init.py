@@ -17,7 +17,7 @@ if __name__ == '__main__':
         (
             name     varchar(255),
             email    varchar(255) NOT NULL UNIQUE,
-            salt     varchar(40)  NOT NULL,
+            salt     varchar      NOT NULL,
             password varchar      NOT NULL,
             id       integer      NOT NULL UNIQUE,
             PRIMARY KEY (id)
@@ -48,13 +48,13 @@ if __name__ == '__main__':
         create table purchases
         (
             product_id integer NOT NULL,
-            orders_id  integer NOT NULL,
+            order_id  integer NOT NULL,
             CONSTRAINT fk_product
                 FOREIGN KEY (product_id)
                     REFERENCES products (id)
                     ON DELETE CASCADE,
             CONSTRAINT fk_orders
-                FOREIGN KEY (orders_id)
+                FOREIGN KEY (order_id)
                     REFERENCES orders (id)
                     ON DELETE CASCADE
         );
