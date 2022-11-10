@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block body %}
+    <br>
+    <a href="{{ url_for('main') }}" class="link-dark" style="padding-left: 20px; text-decoration: none">←More adverts</a>
+    {% if user %}
+    <span style="padding-left: 70%">
+        <button class="btn" style="background-color: lightgray">Edit</button>
+        <button class="btn" style="background-color: lightgray">Delete</button>
+    </span>
+    {% endif %}
+    <br><br>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6" style="overflow: hidden; width: 40%; padding-left: 10%;">
+                <img src="{{ advert.image_url }}"
+                     alt="{{ advert.title }}"
+                     style="width: 100%; height: 100%; object-fit: cover">
+            </div>
+            <div class="col-sm-6" style="padding-left: 5%">
+                <h1>{{ advert.title }}</h1>
+                <div class="row">
+                    <div class="col-sm-6"><h4>{{ advert.cost }} rub</h4></div>
+                    <div class="col-sm-6">Category: {{ advert.category }}</div>
+                </div>
+                <br>
+                <button class="btn btn-lg bg-dark text-white" style="width: 100px">Buy</button>
+                <button class="btn btn-lg" style="background-color: lightgray">Add to cart</button>
+                <button class="btn btn-lg" style="background-color: lightgray">Add to favourite</button>
+                <br><br>
+                <h5>Description</h5>
+                <p>{{ advert.description }}</p>
+                <br>
+                <p>Owner: {{ owner }}</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
