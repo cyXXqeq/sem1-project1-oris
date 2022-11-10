@@ -18,15 +18,15 @@ def get_id(model_name: str) -> int:
 
 UserTuple = namedtuple('UserTuple', 'name email password id')
 
-ProductTuple = namedtuple('ProductTuple', 'title description cost category id')
+AdvertTuple = namedtuple('AdvertTuple', 'title description category id user_id cost image_url')
 
 OrderTuple = namedtuple('OrderTuple', 'user_id summa id')
 
-PurchaseTuple = namedtuple('PurchaseTuple', 'product_id order_id')
+PurchaseTuple = namedtuple('PurchaseTuple', 'advert_id order_id')
 
-FavouriteTuple = namedtuple('FavouriteTuple', 'user_id product_id')
+FavouriteTuple = namedtuple('FavouriteTuple', 'user_id advert_id')
 
-BasketTuple = namedtuple('BasketTuple', 'user_id product_id')
+CartTuple = namedtuple('CartTuple', 'user_id advert_id')
 
 
 class DataBase(ABC):
@@ -98,22 +98,31 @@ class User(DataBase):
         return bcrypt.checkpw(password.encode(), bytes.fromhex(hash_password))
 
 
-class Product(DataBase):
-    name = 'products'
-    named_tuple = ProductTuple
+class Advert(DataBase):
+    name = 'adverts'
+    named_tuple = AdvertTuple
 
-    def __init__(self, title, description, cost, category):
+    def __init__(self, title, description, category, user_id, cost, image_url):
         super().__init__()
         self.title = title
         self.description = description
-        self.cost = cost
         self.category = category
-        self.id = get_id('product')
+        self.id = get_id('advert')
+        self.user_id = user_id
+        self.cost = cost
+        self.image_url = image_url
 
     def save(self):
         super().save(
-            f'''INSERT INTO products (title, descrition, cost, category, id)
-            VALUES  ('{self.title}', '{self.description}', '{self.cost}', '{self.category}', '{self.id}');'''
+            f'''INSERT INTO advert (title, descrition, category, id, user_id, cost, image_url)
+            VALUES  (
+            '{self.title}',
+            '{self.description}',
+            '{self.category}',
+            '{self.id}'),
+            '{self.user_id}',
+            '{self.cost}',
+            '{self.image_url}';'''
         )
 
 
@@ -138,15 +147,15 @@ class Purchase(DataBase):
     name = 'purchases'
     named_tuple = PurchaseTuple
 
-    def __init__(self, product_id, order_id):
+    def __init__(self, advert_id, order_id):
         super().__init__()
-        self.product_id = product_id
+        self.advert_id = advert_id
         self.order_id = order_id
 
     def save(self):
         super().save(
-            f'''INSERT INTO purchases (product_id, order_id)
-            VALUES ('{self.product_id}', '{self.order_id}');'''
+            f'''INSERT INTO purchases (advert_id, order_id)
+            VALUES ('{self.advert_id}', '{self.order_id}');'''
         )
 
 
@@ -154,30 +163,38 @@ class Favourite(DataBase):
     name = 'favourites'
     named_tuple = FavouriteTuple
 
-    def __init__(self, user_id, product_id):
+    def __init__(self, user_id, advert_id):
         super().__init__()
-        self.product_id = product_id
+        self.advert_id = advert_id
         self.user_id = user_id
 
     def save(self):
         super().save(
-            f'''INSERT INTO favourites (product_id, orders_id)
-            VALUES ('{self.user_id}', '{self.product_id}');'''
+            f'''INSERT INTO favourites (advert_id, orders_id)
+            VALUES ('{self.user_id}', '{self.advert_id}');'''
         )
 
 
-class Basket(DataBase):
-    name = 'basket'
-    named_tuple = BasketTuple
+class Cart(DataBase):
+    name = 'cart'
+    named_tuple = CartTuple
 
-    def __init__(self, user_id, product_id):
+    def __init__(self, user_id, advert_id):
         super().__init__()
-        self.product_id = product_id
+        self.advert_id = advert_id
         self.user_id = user_id
 
     def save(self):
         super().save(
-            f'''INSERT INTO basket (product_id, orders_id)
-            VALUES ('{self.user_id}', '{self.product_id}');'''
+            f'''INSERT INTO cart (advert_id, orders_id)
+            VALUES ('{self.user_id}', '{self.advert_id}');'''
         )
-        self.con.commit()
+
+
+if __name__ == '__main__':
+    # user1 = User(name='Jojo', email='pro@pro.pro', password='jojo')
+    # user2 = User(name='Han', email='han@han.han', password='han')
+    # user1.save()
+    # user2.save()
+    jojo = User.get_all(name='Jojo')
+    print(User.check_password('jojo', jojo.password))

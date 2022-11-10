@@ -23,14 +23,20 @@ if __name__ == '__main__':
             PRIMARY KEY (id)
         );
         
-        create table products
+        create table adverts
         (
-            title       varchar(255) NOT NULL,
-            description text         NOT NULL,
-            cost        money        NOT NULL,
-            category    varchar      NOT NULL,
-            id          integer      NOT NULL UNIQUE,
-            PRIMARY KEY (id)
+            title       varchar(255)     NOT NULL,
+            description text             NOT NULL,
+            category    varchar          NOT NULL,
+            id          integer          NOT NULL UNIQUE,
+            user_id     integer          NOT NULL,
+            cost        double precision NOT NULL,
+            image_url   text,
+            PRIMARY KEY (id),
+            CONSTRAINT fk_user
+                FOREIGN KEY (user_id)
+                    REFERENCES users (id)
+                    ON DELETE CASCADE 
         );
         
         create table orders
@@ -47,11 +53,11 @@ if __name__ == '__main__':
         
         create table purchases
         (
-            product_id integer NOT NULL,
+            advert_id integer NOT NULL,
             order_id  integer NOT NULL,
-            CONSTRAINT fk_product
-                FOREIGN KEY (product_id)
-                    REFERENCES products (id)
+            CONSTRAINT fk_advert
+                FOREIGN KEY (advert_id)
+                    REFERENCES adverts (id)
                     ON DELETE CASCADE,
             CONSTRAINT fk_orders
                 FOREIGN KEY (order_id)
@@ -62,28 +68,28 @@ if __name__ == '__main__':
         create table favourites
         (
             user_id    integer NOT NULL,
-            product_id integer NOT NULL,
+            advert_id integer NOT NULL,
             CONSTRAINT fk_user
                 FOREIGN KEY (user_id)
                     REFERENCES users (id)
                     ON DELETE CASCADE,
-            CONSTRAINT fk_product
-                FOREIGN KEY (product_id)
-                    REFERENCES products (id)
+            CONSTRAINT fk_advert
+                FOREIGN KEY (advert_id)
+                    REFERENCES adverts (id)
                     ON DELETE CASCADE
         );
         
-        create table basket
+        create table cart
         (
             user_id    integer NOT NULL,
-            product_id integer NOT NULL,
+            advert_id integer NOT NULL,
             CONSTRAINT fk_user
                 FOREIGN KEY (user_id)
                     REFERENCES users (id)
                     ON DELETE CASCADE,
-            CONSTRAINT fk_product
-                FOREIGN KEY (product_id)
-                    REFERENCES products (id)
+            CONSTRAINT fk_advert
+                FOREIGN KEY (advert_id)
+                    REFERENCES adverts (id)
                     ON DELETE CASCADE
         );'''
     )
@@ -91,7 +97,7 @@ if __name__ == '__main__':
 
     id_dict = {
         'user': 0,
-        'product': 0,
+        'advert': 0,
         'order': 0
     }
     with open('id_dict.json', 'w') as id_json:
