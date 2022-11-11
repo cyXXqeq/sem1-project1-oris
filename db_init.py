@@ -15,10 +15,9 @@ if __name__ == '__main__':
     cur.execute(
         '''create table users
         (
-            name     varchar(255),
             email    varchar(255) NOT NULL UNIQUE,
-            salt     varchar      NOT NULL,
             password varchar      NOT NULL,
+            name     varchar(255),
             id       integer      NOT NULL UNIQUE,
             PRIMARY KEY (id)
         );
@@ -28,10 +27,10 @@ if __name__ == '__main__':
             title       varchar(255)     NOT NULL,
             description text             NOT NULL,
             category    varchar          NOT NULL,
-            id          integer          NOT NULL UNIQUE,
-            user_id     integer          NOT NULL,
             cost        double precision NOT NULL,
             image_url   text,
+            user_id     integer          NOT NULL,
+            id          integer          NOT NULL UNIQUE,
             PRIMARY KEY (id),
             CONSTRAINT fk_user
                 FOREIGN KEY (user_id)
@@ -41,8 +40,8 @@ if __name__ == '__main__':
         
         create table orders
         (
-            user_id integer NOT NULL,
             summa   money   NOT NULL,
+            user_id integer NOT NULL,
             id      integer NOT NULL UNIQUE,
             PRIMARY KEY (id),
             CONSTRAINT fk_user

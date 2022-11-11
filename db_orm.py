@@ -4,6 +4,7 @@ from collections import namedtuple
 
 import bcrypt
 import psycopg2
+from flask_login import UserMixin
 
 
 def get_id(model_name: str) -> int:
@@ -39,7 +40,7 @@ class DataBase(ABC):
     )
 
     @abstractmethod
-    def __init__(self):
+    def __init__(self, *args):
         self.cur = self.con.cursor()
 
     @classmethod
@@ -54,43 +55,52 @@ class DataBase(ABC):
                     limitation = f"'{kwargs[key]}'"
                 request += f"{key} = {limitation} AND "
             request = request[:-5] + ';'
-        cur = cls.con.cursor()
-        cur.execute(request)
-        return cls.prepare_data(cur.fetchall())
+        try:
+            cur = cls.con.cursor()
+            cur.execute(request)
+            return cls.prepare_data(cur.fetchall())
+        except:
+            return None
 
     @classmethod
     def prepare_data(cls, list_of_tuples):
         list_of_objects = []
         for tup in list_of_tuples:
-            list_of_objects.append(cls.named_tuple(*tup))
+            list_of_objects.append(cls(*tup))
         if len(list_of_objects) == 1:
             return list_of_objects[0]
         return list_of_objects
 
     @abstractmethod
     def save(self, request):
-        self.cur.execute(request)
-        self.con.commit()
+        try:
+            self.cur.execute(request)
+            self.con.commit()
+        except:
+            print('Failed to save')
 
 
-class User(DataBase):
+class User(DataBase, UserMixin):
     name = 'users'
     named_tuple = UserTuple
 
-    def __init__(self, email, password, name=None):
+    def __init__(self, email, password, name=None, id=None):
         super().__init__()
         self.email = email
+        self.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).hex()
         if name:
             self.name = name
         else:
             self.name = email.split('@')[0]
-        self.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).hex()
-        self.id = get_id('user')
+        if id is not None:
+            self.id = id
+        else:
+            self.id = get_id('user')
 
     def save(self):
         super().save(
-            f'''INSERT INTO users (name, email, password, id)
-            VALUES ('{self.name}', '{self.email}', '{self.password}', {self.id});'''
+            f'''INSERT INTO users (email, password, name, id)
+            VALUES ('{self.email}', '{self.password}', '{self.name}', {self.id});'''
         )
 
     @staticmethod
@@ -102,27 +112,30 @@ class Advert(DataBase):
     name = 'adverts'
     named_tuple = AdvertTuple
 
-    def __init__(self, title, description, category, user_id, cost, image_url):
+    def __init__(self, title, description, category, cost, image_url, user_id, id=None):
         super().__init__()
         self.title = title
         self.description = description
         self.category = category
-        self.id = get_id('advert')
-        self.user_id = user_id
         self.cost = cost
         self.image_url = image_url
+        self.user_id = user_id
+        if id is not None:
+            self.id = id
+        else:
+            self.id = get_id('advert')
 
     def save(self):
         super().save(
-            f'''INSERT INTO advert (title, descrition, category, id, user_id, cost, image_url)
+            f'''INSERT INTO advert (title, descrition, category, cost, image_url, user_id, id)
             VALUES  (
             '{self.title}',
             '{self.description}',
             '{self.category}',
-            '{self.id}'),
-            '{self.user_id}',
             '{self.cost}',
-            '{self.image_url}';'''
+            '{self.image_url}',
+            '{self.user_id}',
+            '{self.id}');'''
         )
 
 
@@ -130,16 +143,19 @@ class Order(DataBase):
     name = 'orders'
     named_tuple = OrderTuple
 
-    def __init__(self, user_id, summa):
+    def __init__(self, summa, user_id, id=None):
         super().__init__()
-        self.user_id = user_id
         self.summa = summa
-        self.id = get_id('order')
+        self.user_id = user_id
+        if id is not None:
+            self.id = id
+        else:
+            self.id = get_id('order')
 
     def save(self):
         super().save(
-            f'''INSERT INTO orders (user_id, summa, id)
-            VALUES ('{self.user_id}', '{self.summa}', '{self.id}');'''
+            f'''INSERT INTO orders (summa, user_id, id)
+            VALUES ('{self.summa}', '{self.user_id}', '{self.id}');'''
         )
 
 
@@ -165,12 +181,12 @@ class Favourite(DataBase):
 
     def __init__(self, user_id, advert_id):
         super().__init__()
-        self.advert_id = advert_id
         self.user_id = user_id
+        self.advert_id = advert_id
 
     def save(self):
         super().save(
-            f'''INSERT INTO favourites (advert_id, orders_id)
+            f'''INSERT INTO favourites (user_id, advert_id)
             VALUES ('{self.user_id}', '{self.advert_id}');'''
         )
 
@@ -181,12 +197,12 @@ class Cart(DataBase):
 
     def __init__(self, user_id, advert_id):
         super().__init__()
-        self.advert_id = advert_id
         self.user_id = user_id
+        self.advert_id = advert_id
 
     def save(self):
         super().save(
-            f'''INSERT INTO cart (advert_id, orders_id)
+            f'''INSERT INTO cart (user_id, advert_id)
             VALUES ('{self.user_id}', '{self.advert_id}');'''
         )
 
@@ -196,5 +212,8 @@ if __name__ == '__main__':
     # user2 = User(name='Han', email='han@han.han', password='han')
     # user1.save()
     # user2.save()
-    jojo = User.get_all(name='Jojo')
-    print(User.check_password('jojo', jojo.password))
+    # jojo = User.get_all(name='Jojo')
+    # print(User.check_password('jojo', jojo.password))
+    adverts = Advert.get_all()
+    for adv in adverts:
+        print(adv.title, adv.description, adv.category, adv.cost, adv.image_url, adv.user_id, adv.id, "----------", sep='\n')
