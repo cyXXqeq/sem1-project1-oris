@@ -1,33 +1,8 @@
-import json
 from abc import ABC, abstractmethod
-from collections import namedtuple
 
 import bcrypt
 import psycopg2
 from flask_login import UserMixin
-
-
-def get_id(model_name: str) -> int:
-    with open('id_dict.json', 'r') as id_json:
-        id_dict = json.load(id_json)
-        id = id_dict[f'{model_name}']
-        id_dict[f'{model_name}'] += 1
-    with open('id_dict.json', 'w') as id_json:
-        json.dump(id_dict, id_json)
-    return id
-
-
-UserTuple = namedtuple('UserTuple', 'name email password id')
-
-AdvertTuple = namedtuple('AdvertTuple', 'title description category id user_id cost image_url')
-
-OrderTuple = namedtuple('OrderTuple', 'user_id summa id')
-
-PurchaseTuple = namedtuple('PurchaseTuple', 'advert_id order_id')
-
-FavouriteTuple = namedtuple('FavouriteTuple', 'user_id advert_id')
-
-CartTuple = namedtuple('CartTuple', 'user_id advert_id')
 
 
 class DataBase(ABC):
@@ -53,14 +28,18 @@ class DataBase(ABC):
                     limitation = kwargs[key]
                 else:
                     limitation = f"'{kwargs[key]}'"
-                request += f"{key} = {limitation} AND "
+                if limitation == "'not null'":
+                    request += f"{key} IS NOT NULL AND "
+                else:
+                    request += f"{key} = {limitation} AND "
             request = request[:-5] + ';'
         try:
             cur = cls.con.cursor()
             cur.execute(request)
             return cls.prepare_data(cur.fetchall())
-        except:
-            return None
+        except Exception as ex:
+            print(ex)
+            return False
 
     @classmethod
     def prepare_data(cls, list_of_tuples):
@@ -72,45 +51,84 @@ class DataBase(ABC):
         return list_of_objects
 
     @abstractmethod
-    def save(self, request):
+    def save(self, request, data):
         try:
-            self.cur.execute(request)
+            self.cur.execute(request, data)
             self.con.commit()
-        except:
-            print('Failed to save')
+        except Exception as ex:
+            print(ex)
+            return False
+
+    def update(self, **kwargs):
+        try:
+            fields = [kwarg[0] for kwarg in kwargs.items()]
+            values = [kwarg[1] for kwarg in kwargs.items()]
+            request = f"UPDATE {self.__class__.name} SET ("
+            field_str = ""
+            for field in fields:
+                field_str += f"{field}, "
+            request += field_str[:-2] + ") = (" + "%s, " * len(values)
+            request = request[:-2] + f") WHERE id = {self.id}"
+            self.cur.execute(request, values)
+        except Exception as ex:
+            print(ex)
+            return False
 
 
-class User(DataBase, UserMixin):
+class DeleteMixin:
+    def __delete__(self):
+        try:
+            self.cur.execute(f"DELETE FROM {self.__class__.name} WHERE id = %s", [self.id])
+            self.con.commit()
+        except Exception as ex:
+            print(ex)
+            return False
+
+
+class User(DataBase, UserMixin, DeleteMixin):
     name = 'users'
-    named_tuple = UserTuple
 
-    def __init__(self, email, password, name=None, id=None):
+    def __init__(self, email, password, name=None, image_url=None, admin_status=False, id=None):
         super().__init__()
         self.email = email
-        self.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).hex()
+        if id is None:
+            self.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).hex()
+        else:
+            self.password = password
         if name:
             self.name = name
         else:
             self.name = email.split('@')[0]
-        if id is not None:
-            self.id = id
-        else:
-            self.id = get_id('user')
+        self.image_url = image_url
+        self.admin_status = admin_status
+        self.id = id
 
     def save(self):
-        super().save(
-            f'''INSERT INTO users (email, password, name, id)
-            VALUES ('{self.email}', '{self.password}', '{self.name}', {self.id});'''
-        )
+        if self.id:
+            print('Cannot save existing object, use update function')
+        else:
+            request = "INSERT INTO users VALUES (%s, %s, %s, %s, %s);"
+            data = [
+                self.email,
+                self.password,
+                self.name,
+                self.image_url,
+                self.admin_status
+            ]
+            super().save(request, data)
+            users = User.get_all()
+            if isinstance(users, User):
+                self.id = users.id
+            else:
+                self.id = users[-1].id
 
     @staticmethod
     def check_password(password, hash_password):
         return bcrypt.checkpw(password.encode(), bytes.fromhex(hash_password))
 
 
-class Advert(DataBase):
+class Advert(DataBase, DeleteMixin):
     name = 'adverts'
-    named_tuple = AdvertTuple
 
     def __init__(self, title, description, category, cost, image_url, user_id, id=None):
         super().__init__()
@@ -120,48 +138,53 @@ class Advert(DataBase):
         self.cost = cost
         self.image_url = image_url
         self.user_id = user_id
-        if id is not None:
-            self.id = id
-        else:
-            self.id = get_id('advert')
+        self.id = id
 
     def save(self):
-        super().save(
-            f'''INSERT INTO advert (title, descrition, category, cost, image_url, user_id, id)
-            VALUES  (
-            '{self.title}',
-            '{self.description}',
-            '{self.category}',
-            '{self.cost}',
-            '{self.image_url}',
-            '{self.user_id}',
-            '{self.id}');'''
-        )
+        if self.id:
+            print('Cannot save existing object, use update function')
+        else:
+            request = "INSERT INTO adverts VALUES  (%s, %s, %s, %s, %s, %s);"
+            data = [
+                self.title,
+                self.description,
+                self.category,
+                self.cost,
+                self.image_url,
+                self.user_id
+            ]
+            super().save(request, data)
+            adverts = Advert.get_all()
+            if isinstance(adverts, Advert):
+                self.id = adverts.id
+            else:
+                self.id = adverts[-1].id
 
 
 class Order(DataBase):
     name = 'orders'
-    named_tuple = OrderTuple
 
     def __init__(self, summa, user_id, id=None):
         super().__init__()
         self.summa = summa
         self.user_id = user_id
-        if id is not None:
-            self.id = id
-        else:
-            self.id = get_id('order')
+        self.id = id
 
     def save(self):
-        super().save(
-            f'''INSERT INTO orders (summa, user_id, id)
-            VALUES ('{self.summa}', '{self.user_id}', '{self.id}');'''
-        )
+        if self.id:
+            print('Cannot save existing object, use update function')
+        else:
+            request = f"INSERT INTO orders VALUES ('{self.summa}', '{self.user_id}');"
+            super().save(request)
+            orders = Order.get_all()
+            if isinstance(orders, Order):
+                self.id = orders.id
+            else:
+                self.id = orders[-1].id
 
 
 class Purchase(DataBase):
     name = 'purchases'
-    named_tuple = PurchaseTuple
 
     def __init__(self, advert_id, order_id):
         super().__init__()
@@ -170,14 +193,12 @@ class Purchase(DataBase):
 
     def save(self):
         super().save(
-            f'''INSERT INTO purchases (advert_id, order_id)
-            VALUES ('{self.advert_id}', '{self.order_id}');'''
+            f"INSERT INTO purchases VALUES ('{self.advert_id}', '{self.order_id}');"
         )
 
 
-class Favourite(DataBase):
-    name = 'favourites'
-    named_tuple = FavouriteTuple
+class Favorite(DataBase):
+    name = 'favorites'
 
     def __init__(self, user_id, advert_id):
         super().__init__()
@@ -186,14 +207,12 @@ class Favourite(DataBase):
 
     def save(self):
         super().save(
-            f'''INSERT INTO favourites (user_id, advert_id)
-            VALUES ('{self.user_id}', '{self.advert_id}');'''
+            f"INSERT INTO favorites VALUES ('{self.user_id}', '{self.advert_id}');"
         )
 
 
 class Cart(DataBase):
     name = 'cart'
-    named_tuple = CartTuple
 
     def __init__(self, user_id, advert_id):
         super().__init__()
@@ -202,18 +221,20 @@ class Cart(DataBase):
 
     def save(self):
         super().save(
-            f'''INSERT INTO cart (user_id, advert_id)
-            VALUES ('{self.user_id}', '{self.advert_id}');'''
+            f"INSERT INTO cart VALUES ('{self.user_id}', '{self.advert_id}');"
         )
 
 
-if __name__ == '__main__':
-    # user1 = User(name='Jojo', email='pro@pro.pro', password='jojo')
+# if __name__ == '__main__':
+    # user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)
     # user2 = User(name='Han', email='han@han.han', password='han')
     # user1.save()
     # user2.save()
     # jojo = User.get_all(name='Jojo')
     # print(User.check_password('jojo', jojo.password))
-    adverts = Advert.get_all()
-    for adv in adverts:
-        print(adv.title, adv.description, adv.category, adv.cost, adv.image_url, adv.user_id, adv.id, "----------", sep='\n')
+    # user3 = User(email='test@test.test', password='test')
+    # user3.save()
+    # print(User.check_password('test', User.get_all(email='test@test.test').password))
+    # adverts = Advert.get_all()
+    # for adv in adverts:
+    #     print(adv.title, adv.description, adv.category, adv.cost, adv.image_url, adv.user_id, adv.id, "----------", sep='\n')
