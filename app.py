@@ -4,7 +4,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from db_orm import User, Advert, Order, Purchase, Favorite, Cart
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'd7dcef09a8c584b32d85a9b09730edf824347958'
+app.config['SECRET_KEY'] = "d7dcef09a8c584b32d85a9b09730edf824347958"
 login_manager = LoginManager(app)
 
 
@@ -34,17 +34,12 @@ def main():
     return render_template('main.html', **context)
 
 
-@app.route('/advert/<int:id>/')
-def advert(id):
-    adv = Advert.get_all(id=id)
+@app.route('/advert/<int:page_id>/')
+def advert(page_id):
+    adv = Advert.get_all(id=page_id)
     owner = User.get_all(id=adv.user_id).name
-    if session.get('user_id'):
-        user = User.get_all(id=session['user_id'])
-    else:
-        user = None
     context = {
         'advert': adv,
-        'user': user,
         'owner': owner
     }
     return render_template('advert.html', **context)
@@ -118,31 +113,46 @@ def redirect_to_signin(response):
 @app.route('/add_advert', methods=['GET', 'POST'])
 @login_required
 def add_advert():
+    context = {
+        'title': request.form.get('title'),
+        'description': request.form.get('desc'),
+        'category': request.form.get('cat'),
+        'cost': request.form.get('cost'),
+        'image_url': request.form.get('img_url'),
+        'user_id': current_user.id
+    }
+
     if request.method == 'POST':
-        title = request.form.get('title')
-        desc = request.form.get('desc')
-        cat = request.form.get('cat')
-        cost = request.form.get('cost')
-        img_url = request.form.get('img_url')
-        user_id = current_user.id
 
-        adv = Advert(title, desc, cat, cost, img_url, user_id)
+        if context['title'] and context['description'] and context['category'] and context['cost']:
+            adv = Advert(**context)
+            adv.save()
 
-        adv.save()
+            return redirect(url_for('advert', id=adv.id))
 
-        return redirect(url_for('main', id=adv.id))
+        flash('Title, description, category and cost are required fields! Please, enter this fields.')
 
-    return render_template('add_advert.html')
+    for key in context:
+        if context[key] is None:
+            context[key] = ''
+
+    return render_template('add_advert.html', **context)
 
 
-@app.route('/advert/<int:id>/edit', methods=['GET', 'POST'])
+@app.route('/advert/<int:page_id>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_advert(id):
-    advert = Advert.get_all(id=id)
-    if current_user.id == advert.user_id:
+def edit_advert(page_id):
+    adv = Advert.get_all(id=page_id)
+    if current_user.id == adv.user_id:
 
         context = {
-            'advert': advert
+            'title': adv.title,
+            'description': adv.description,
+            'category': adv.category,
+            'cost': adv.cost,
+            'image_url': adv.image_url,
+            'user_id': adv.user_id,
+            'id': adv.id
         }
 
         if request.method == 'POST':
@@ -155,22 +165,25 @@ def edit_advert(id):
                 'user_id': current_user.id
             }
 
-            advert.update(**new_data)
+            if new_data['title'] and new_data['description'] and new_data['category'] and new_data['cost']:
+                adv.update(**new_data)
 
-            return redirect(url_for('advert', id=id))
+                return redirect(url_for('advert', id=page_id))
+
+            flash('Title, description, category and cost are required fields! Please, enter this fields.')
         return render_template('edit_advert.html', **context)
-    return redirect(url_for('advert', id=id))
+    return redirect(url_for('advert', id=page_id))
 
 
-@app.route('/advert/<int:id>/delete')
+@app.route('/advert/<int:page_id>/delete')
 @login_required
-def delete_advert(id):
-    adv = Advert.get_all(id=id)
+def delete_advert(page_id):
+    adv = Advert.get_all(id=page_id)
     print(adv)
     if current_user.id == adv.user_id or current_user.admin_status:
         adv.__delete__()
         return redirect(url_for('main'))
-    return redirect(url_for('advert', id=id))
+    return redirect(url_for('advert', id=page_id))
 
 
 @app.route('/profile')

@@ -19,34 +19,62 @@
     <form action="" method="post">
         <div class="form-group">
             <label for="title">Title:</label>
-            <input type="text" class="form-control" name="title" id="title">
+            <input type="text" class="form-control" name="title" id="title" value="{{ title }}" required="required">
         </div>
         <br>
         <div class="form-group">
             <label for="desc">Description:</label>
-            <textarea class="form-control" rows="6" name="desc" id="desc"></textarea>
+            <textarea class="form-control" rows="6" name="desc" id="desc" required="required">{{ description }}</textarea>
         </div>
         <br>
         <div class="form-group">
             <label for="cat">Category:</label>
             <select id="cat" name="cat" class="form-control" required="required">
-                <option value=""></option>
-                <option value="clothing shoes accessories">Clothing Shoes Accessories</option>
-                <option value="children's clothing and shoes">Children's clothing and shoes</option>
-                <option value="products for children and toys">Products for children and toys</option>
-                <option value="beauty and health">Beauty and health</option>
-                <option value="watches and jewelry">Watches and jewelry</option>
+                {% if not category %}
+                    <option value=""></option>
+                {% endif %}
+
+                {% if category == "clothing shoes accessories" %}
+                    <option value="clothing shoes accessories" selected>Clothing Shoes Accessories</option>
+                {% else %}
+                    <option value="clothing shoes accessories">Clothing Shoes Accessories</option>
+                {% endif %}
+
+                {% if category == "children's clothing and shoes" %}
+                    <option value="children's clothing and shoes" selected>Children's clothing and shoes</option>
+                {% else %}
+                    <option value="children's clothing and shoes">Children's clothing and shoes</option>
+                {% endif %}
+
+                {% if category == "products for children and toys" %}
+                    <option value="products for children and toys" selected>Products for children and toys</option>
+                {% else %}
+                    <option value="products for children and toys">Products for children and toys</option>
+                {% endif %}
+
+                {% if category == "beauty and health" %}
+                    <option value="beauty and health" selected>Beauty and health</option>
+                {% else %}
+                    <option value="beauty and health">Beauty and health</option>
+                {% endif %}
+
+                {% if category == "watches and jewelry" %}
+                    <option value="watches and jewelry" selected>Watches and jewelry</option>
+                {% else %}
+                    <option value="watches and jewelry">Watches and jewelry</option>
+                {% endif %}
             </select>
         </div>
         <br>
         <div class="form-group">
             <label for="cost">Cost:</label>
-            <input type="number" step="0.01" min="0" class="form-control" name="cost" id="cost">
+            <input type="number" step="0.01" min="0" class="form-control" name="cost" id="cost"
+                   value="{{ cost }}" required="required">
         </div>
         <br>
         <div class="form-group">
             <label for="img_url">Image url:</label>
-            <input type="url" class="form-control" name="img_url" id="img_url">
+            <input type="url" class="form-control" name="img_url" id="img_url" value="{{ image_url }}">
         </div>
 
         <br>

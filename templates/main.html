@@ -20,7 +20,7 @@
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
                 {% for advert in adverts %}
                     <div class="col">
-                        <a href="{{ url_for('advert', id=advert.id) }}" class="link-dark"
+                        <a href="{{ url_for('advert', page_id=advert.id) }}" class="link-dark"
                            style="text-decoration: none;">
                             <div class="card shadow-sm">
                                 <div style="overflow: hidden; height: 300px;">
