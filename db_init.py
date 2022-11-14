@@ -20,6 +20,7 @@ if __name__ == '__main__':
                image_url    text,
                admin_status bool default false,
                id           serial       NOT NULL UNIQUE,
+               created_at   date default current_date,
                PRIMARY KEY (id)
            );
            

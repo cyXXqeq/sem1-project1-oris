@@ -6,7 +6,7 @@
     {% if current_user.is_authenticated and current_user.id == advert.user_id %}
         <span style="padding-left: 70%">
         <a href="{{ url_for('edit_advert', page_id=advert.id) }}" class="btn" style="background-color: lightgray">Edit</a>
-        <button class="btn btn-danger" onclick="checkDelete({{ advert.id }})">Delete</button>
+        <button class="btn btn-danger" onclick="checkDeleteAdvert({{ advert.id }})">Delete</button>
     </span>
     {% endif %}
     <br><br>
@@ -35,12 +35,5 @@
             </div>
         </div>
     </div>
-    <script>
-        function checkDelete(id) {
-            let text = "Are you sure you want to delete the advert?";
-            if (confirm(text)) {
-                window.location.replace('/advert/' + id + '/delete')
-            }
-        }</script>
 {% endblock %}
 

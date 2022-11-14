@@ -74,34 +74,43 @@ def advert(page_id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    image_url = request.form.get('image_urlL')
+    context = {'categories': categories}
+
+    for field, field_name in [(name, 'name'), (email, 'email'), (image_url, 'image_url')]:
+        if field:
+            context[field_name] = field
+        else:
+            context[field_name] = ''
+
     if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
         password = request.form.get('pwd')
         password2 = request.form.get('pwd2')
 
-        if not (email or password or password2):
-            flash('Please, fill all fields! However, you can leave the name field empty')
+        if email and password and password2:
+            if password != password2:
+                flash('Passwords are not equal!')
+            else:
+                if User.get_all(email=email):
+                    flash('Have user with this email')
+                else:
+                    user = User(email, password, name)
+                    user.save()
 
-        elif password != password2:
-            flash('Passwords are not equal!')
+                    return redirect(url_for('login'))
 
         else:
-            if User.get_all(email=email):
-                flash('Have user with this email')
-            else:
-                user = User(email, password, name)
-                user.save()
+            flash('Please, fill all fields! However, you can leave the name field empty')
 
-                return redirect(url_for('login'))
-
-    return render_template('register.html', categories=categories)
+    return render_template('register.html', **context)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    email = request.form.get('email')
     if request.method == 'POST':
-        email = request.form.get('email')
         password = request.form.get('pwd')
         user = User.get_all(email=email)
         if email and password:
@@ -120,7 +129,9 @@ def login():
                 flash('Login or password is not correct')
         else:
             flash('Please fill login and password fields')
-    return render_template('login.html', categories=categories)
+    if not email:
+        email = ''
+    return render_template('login.html', categories=categories, email=email)
 
 
 @app.route('/logout', methods=['GET', 'POST'])
@@ -200,6 +211,11 @@ def edit_advert(page_id):
                 return redirect(url_for('advert', page_id=page_id))
 
             flash('Title, description, category and cost are required fields! Please, enter this fields.')
+
+        for key in context:
+            if context[key] is None:
+                context[key] = ''
+
         return render_template('edit_advert.html', **context)
     return redirect(url_for('advert', page_id=page_id))
 
@@ -208,9 +224,8 @@ def edit_advert(page_id):
 @login_required
 def delete_advert(page_id):
     adv = Advert.get_all(id=page_id)
-    print(adv)
     if current_user.id == adv.user_id or current_user.admin_status:
-        adv.__delete__()
+        adv.delete()
         return redirect(url_for('main'))
     return redirect(url_for('advert', id=page_id))
 
@@ -221,9 +236,55 @@ def profile():
     return render_template('profile.html')
 
 
+@app.route('/profile/delete')
+@login_required
+def delete_profile():
+    user = current_user
+    user.delete()
+    return redirect(url_for('main'))
+
+
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    context = {
+        'email': current_user.email,
+        'name': current_user.name,
+        'image_url': current_user.image_url,
+        'categories': categories
+    }
+
+    if request.method == 'POST':
+        new_data = {
+            'email': request.form.get('email'),
+            'name': request.form.get('name'),
+        }
+        image_url = request.form.get('image_url')
+        password = request.form.get('password')
+        password_retype = request.form.get('password2')
+
+        if image_url:
+            new_data['image_url'] = image_url
+
+        if password:
+            if password == password_retype:
+                new_data['password'] = password
+            else:
+                flash("Passwords don't match!")
+
+        if new_data['email']:
+            current_user.update(**new_data)
+
+            return redirect(url_for('profile'))
+
+        flash('Email a required field! Please, enter email.')
+
+    return render_template('edit_profile.html', **context)
+
+
 @app.route('/cart')
 def cart():
-    pass
+    return render_template('cart.html')
 
 
 @app.route('/favorites')
@@ -235,11 +296,6 @@ def favorites():
 @app.route('/orders')
 @login_required
 def orders():
-    pass
-
-
-@app.route('/personal_account')
-def personal_account():
     pass
 
 

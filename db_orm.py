@@ -44,13 +44,11 @@ class DataBase(ABC):
             request = request[:-5] + ';'
         try:
             cur = cls.con.cursor()
-            print(request)
             if kwargs.get('category') and kwargs.get('search'):
                 cur.execute(request, [kwargs['category']] + ['%' + kwargs['search'] + '%'] * 2)
             elif kwargs.get('category'):
                 cur.execute(request, [kwargs['category']])
             elif kwargs.get('search'):
-                print(['%' + kwargs['search'] + '%'] * 2)
                 cur.execute(request, ['%' + kwargs['search'] + '%'] * 2)
             else:
                 cur.execute(request)
@@ -95,7 +93,7 @@ class DataBase(ABC):
 
 
 class DeleteMixin:
-    def __delete__(self):
+    def delete(self):
         try:
             self.cur.execute(f"DELETE FROM {self.__class__.name} WHERE id = %s", [self.id])
             self.con.commit()
@@ -107,7 +105,7 @@ class DeleteMixin:
 class User(DataBase, UserMixin, DeleteMixin):
     name = 'users'
 
-    def __init__(self, email, password, name=None, image_url=None, admin_status=False, id=None):
+    def __init__(self, email, password, name=None, image_url=None, admin_status=False, id=None, created_at=None):
         super().__init__()
         self.email = email
         if id is None:
@@ -121,6 +119,7 @@ class User(DataBase, UserMixin, DeleteMixin):
         self.image_url = image_url
         self.admin_status = admin_status
         self.id = id
+        self.created_at = created_at
 
     def save(self):
         if self.id:
@@ -138,8 +137,10 @@ class User(DataBase, UserMixin, DeleteMixin):
             users = User.get_all()
             if isinstance(users, User):
                 self.id = users.id
+                self.created_at = users.created_at
             else:
                 self.id = users[-1].id
+                self.created_at = users[-1].created_at
 
     @staticmethod
     def check_password(password, hash_password):
