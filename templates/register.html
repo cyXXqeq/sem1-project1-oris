@@ -1,0 +1,38 @@
+{% extends "form.html" %}
+{% block form %}
+    <br>
+    <h2>Registration</h2>
+    <br>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            <br>
+        {% endif %}
+    {% endwith %}
+
+    <form action="" method="post">
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" class="form-control" name="email" id="email" placeholder="Enter email">
+        </div>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" class="form-control" name="name" id="name" placeholder="Enter name">
+        </div>
+        <div class="form-group">
+            <label for="pwd">Password:</label>
+            <input type="password" class="form-control" name="pwd" id="pwd" placeholder="Enter password">
+        </div>
+        <div class="form-group">
+            <label for="pwd2">Password retype:</label>
+            <input type="password" class="form-control" name="pwd2" id="pwd2" placeholder="Enter password">
+        </div>
+        <br>
+        <button type="submit" class="btn" style="background-color: lightgray">Submit</button>
+    </form>
+{% endblock %}
