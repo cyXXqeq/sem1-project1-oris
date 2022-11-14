@@ -7,6 +7,18 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = "d7dcef09a8c584b32d85a9b09730edf824347958"
 login_manager = LoginManager(app)
 
+categories = [
+    'clothing',
+    'tools',
+    'entertainment',
+    'shoes',
+    'accessories',
+    'jewelry',
+    'appliances',
+    'food',
+    'other'
+]
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -23,13 +35,27 @@ def about():
     return render_template('about.html')
 
 
-@app.route('/adverts')
+@app.route('/adverts', methods=['GET'])
 def main():
-    adverts = Advert.get_all(user_id='not null')
+    category = request.args.get('category')
+    search = request.args.get('search')
+    filters = {
+        'user_id': 'not null',
+        'category': category,
+        'search': search
+    }
+    print(filters.items())
+
+    adverts = Advert.get_all(**filters)
     if not isinstance(adverts, list):
         adverts = [adverts]
+
+    if not search:
+        search = ''
     context = {
         'adverts': adverts,
+        'search': search,
+        'categories': categories
     }
     return render_template('main.html', **context)
 
@@ -40,7 +66,8 @@ def advert(page_id):
     owner = User.get_all(id=adv.user_id).name
     context = {
         'advert': adv,
-        'owner': owner
+        'owner': owner,
+        'categories': categories
     }
     return render_template('advert.html', **context)
 
@@ -68,7 +95,7 @@ def register():
 
                 return redirect(url_for('login'))
 
-    return render_template('register.html')
+    return render_template('register.html', categories=categories)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -93,7 +120,7 @@ def login():
                 flash('Login or password is not correct')
         else:
             flash('Please fill login and password fields')
-    return render_template('login.html')
+    return render_template('login.html', categories=categories)
 
 
 @app.route('/logout', methods=['GET', 'POST'])
@@ -128,13 +155,14 @@ def add_advert():
             adv = Advert(**context)
             adv.save()
 
-            return redirect(url_for('advert', id=adv.id))
+            return redirect(url_for('advert', page_id=adv.id))
 
         flash('Title, description, category and cost are required fields! Please, enter this fields.')
 
     for key in context:
         if context[key] is None:
             context[key] = ''
+    context['categories'] = categories
 
     return render_template('add_advert.html', **context)
 
@@ -152,7 +180,8 @@ def edit_advert(page_id):
             'cost': adv.cost,
             'image_url': adv.image_url,
             'user_id': adv.user_id,
-            'id': adv.id
+            'id': adv.id,
+            'categories': categories
         }
 
         if request.method == 'POST':
@@ -168,11 +197,11 @@ def edit_advert(page_id):
             if new_data['title'] and new_data['description'] and new_data['category'] and new_data['cost']:
                 adv.update(**new_data)
 
-                return redirect(url_for('advert', id=page_id))
+                return redirect(url_for('advert', page_id=page_id))
 
             flash('Title, description, category and cost are required fields! Please, enter this fields.')
         return render_template('edit_advert.html', **context)
-    return redirect(url_for('advert', id=page_id))
+    return redirect(url_for('advert', page_id=page_id))
 
 
 @app.route('/advert/<int:page_id>/delete')

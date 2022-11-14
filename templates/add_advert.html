@@ -24,7 +24,8 @@
         <br>
         <div class="form-group">
             <label for="desc">Description:</label>
-            <textarea class="form-control" rows="6" name="desc" id="desc" required="required">{{ description }}</textarea>
+            <textarea class="form-control" rows="6" name="desc" id="desc"
+                      required="required">{{ description }}</textarea>
         </div>
         <br>
         <div class="form-group">
@@ -34,35 +35,13 @@
                     <option value=""></option>
                 {% endif %}
 
-                {% if category == "clothing shoes accessories" %}
-                    <option value="clothing shoes accessories" selected>Clothing Shoes Accessories</option>
-                {% else %}
-                    <option value="clothing shoes accessories">Clothing Shoes Accessories</option>
-                {% endif %}
-
-                {% if category == "children's clothing and shoes" %}
-                    <option value="children's clothing and shoes" selected>Children's clothing and shoes</option>
-                {% else %}
-                    <option value="children's clothing and shoes">Children's clothing and shoes</option>
-                {% endif %}
-
-                {% if category == "products for children and toys" %}
-                    <option value="products for children and toys" selected>Products for children and toys</option>
-                {% else %}
-                    <option value="products for children and toys">Products for children and toys</option>
-                {% endif %}
-
-                {% if category == "beauty and health" %}
-                    <option value="beauty and health" selected>Beauty and health</option>
-                {% else %}
-                    <option value="beauty and health">Beauty and health</option>
-                {% endif %}
-
-                {% if category == "watches and jewelry" %}
-                    <option value="watches and jewelry" selected>Watches and jewelry</option>
-                {% else %}
-                    <option value="watches and jewelry">Watches and jewelry</option>
-                {% endif %}
+                {% for cat in categories %}
+                    {% if cat == category %}
+                        <option value="{{ cat }}" selected>{{ cat }}</option>
+                    {% else %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                    {% endif %}
+                {% endfor %}
             </select>
         </div>
         <br>

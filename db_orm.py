@@ -23,19 +23,37 @@ class DataBase(ABC):
         request = f"SELECT * FROM {cls.name}"
         if kwargs:
             request += f" WHERE "
-            for key in kwargs:
+            for key, value in kwargs.items():
                 if key == 'id':
                     limitation = kwargs[key]
                 else:
-                    limitation = f"'{kwargs[key]}'"
+                    limitation = f"'{value}'"
                 if limitation == "'not null'":
                     request += f"{key} IS NOT NULL AND "
+                elif key == 'category' and value:
+                    request += "category = %s AND "
+                elif key == 'search' and value:
+                    request += "UPPER(title) LIKE UPPER(%s) OR UPPER(description) LIKE UPPER(%s) AND "
                 else:
-                    request += f"{key} = {limitation} AND "
+                    if key == 'category':
+                        continue
+                    elif key == 'search':
+                        continue
+                    else:
+                        request += f"{key} = {limitation} AND "
             request = request[:-5] + ';'
         try:
             cur = cls.con.cursor()
-            cur.execute(request)
+            print(request)
+            if kwargs.get('category') and kwargs.get('search'):
+                cur.execute(request, [kwargs['category']] + ['%' + kwargs['search'] + '%'] * 2)
+            elif kwargs.get('category'):
+                cur.execute(request, [kwargs['category']])
+            elif kwargs.get('search'):
+                print(['%' + kwargs['search'] + '%'] * 2)
+                cur.execute(request, ['%' + kwargs['search'] + '%'] * 2)
+            else:
+                cur.execute(request)
             return cls.prepare_data(cur.fetchall())
         except Exception as ex:
             print(ex)
@@ -70,6 +88,7 @@ class DataBase(ABC):
             request += field_str[:-2] + ") = (" + "%s, " * len(values)
             request = request[:-2] + f") WHERE id = {self.id}"
             self.cur.execute(request, values)
+            self.con.commit()
         except Exception as ex:
             print(ex)
             return False
@@ -224,17 +243,16 @@ class Cart(DataBase):
             f"INSERT INTO cart VALUES ('{self.user_id}', '{self.advert_id}');"
         )
 
-
 # if __name__ == '__main__':
-    # user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)
-    # user2 = User(name='Han', email='han@han.han', password='han')
-    # user1.save()
-    # user2.save()
-    # jojo = User.get_all(name='Jojo')
-    # print(User.check_password('jojo', jojo.password))
-    # user3 = User(email='test@test.test', password='test')
-    # user3.save()
-    # print(User.check_password('test', User.get_all(email='test@test.test').password))
-    # adverts = Advert.get_all()
-    # for adv in adverts:
-    #     print(adv.title, adv.description, adv.category, adv.cost, adv.image_url, adv.user_id, adv.id, "----------", sep='\n')
+# user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)
+# user2 = User(name='Han', email='han@han.han', password='han')
+# user1.save()
+# user2.save()
+# jojo = User.get_all(name='Jojo')
+# print(User.check_password('jojo', jojo.password))
+# user3 = User(email='test@test.test', password='test')
+# user3.save()
+# print(User.check_password('test', User.get_all(email='test@test.test').password))
+# adverts = Advert.get_all()
+# for adv in adverts:
+#     print(adv.title, adv.description, adv.category, adv.cost, adv.image_url, adv.user_id, adv.id, "----------", sep='\n')

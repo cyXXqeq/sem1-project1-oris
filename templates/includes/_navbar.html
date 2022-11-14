@@ -14,6 +14,16 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/adverts">Adverts</a>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
+                        Categories
+                    </a>
+                    <ul class="dropdown-menu">
+                        {% for category in categories %}
+                            <li><a class="dropdown-item" href="/adverts?category={{ category }}">{{ category }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </li>
                 {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="/add_advert" style="white-space: nowrap">Add advert</a>
