@@ -1,0 +1,79 @@
+{% extends 'form.html' %}
+
+{% block form %}
+    <br>
+    <h2>Edit advert</h2>
+    <br>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            <br>
+        {% endif %}
+    {% endwith %}
+
+    <form action="" method="post">
+        <div class="form-group">
+            <label for="title">Title:</label>
+            <input type="text" class="form-control" name="title" id="title" value="{{ advert.title }}">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="desc">Description:</label>
+            <textarea class="form-control" rows="6" name="desc" id="desc">{{ advert.description }}</textarea>
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="cat">Category:</label>
+            <select id="cat" name="cat" class="form-control" required="required">
+                {% if advert.category == "clothing shoes accessories" %}
+                    <option value="clothing shoes accessories" selected>Clothing Shoes Accessories</option>
+                {% else %}
+                    <option value="clothing shoes accessories">Clothing Shoes Accessories</option>
+                {% endif %}
+
+                {% if advert.category == "children's clothing and shoes" %}
+                    <option value="children's clothing and shoes" selected>Children's clothing and shoes</option>
+                {% else %}
+                    <option value="children's clothing and shoes">Children's clothing and shoes</option>
+                {% endif %}
+
+                {% if advert.category == "products for children and toys" %}
+                    <option value="products for children and toys" selected>Products for children and toys</option>
+                {% else %}
+                    <option value="products for children and toys">Products for children and toys</option>
+                {% endif %}
+
+                {% if advert.category == "beauty and health" %}
+                    <option value="beauty and health" selected>Beauty and health</option>
+                {% else %}
+                    <option value="beauty and health">Beauty and health</option>
+                {% endif %}
+
+                {% if advert.category == "watches and jewelry" %}
+                    <option value="watches and jewelry" selected>Watches and jewelry</option>
+                {% else %}
+                    <option value="watches and jewelry">Watches and jewelry</option>
+                {% endif %}
+            </select>
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="cost">Cost:</label>
+            <input type="number" step="0.01" min="0" class="form-control" name="cost" id="cost"
+                   value="{{ advert.cost }}">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="img_url">Image url:</label>
+            <input type="url" class="form-control" name="img_url" id="img_url" value="{{ advert.image_url }}">
+        </div>
+
+        <br>
+        <button type="submit" class="btn" style="background-color: lightgray">Submit</button>
+    </form>
+{% endblock %}

@@ -107,9 +107,76 @@ def logout():
     return redirect(url_for('main'))
 
 
-@app.route('/register')
-def register():
-    pass
+@app.after_request
+def redirect_to_signin(response):
+    if response.status_code == 401:
+        return redirect(url_for('login') + '?next=' + request.url)
+
+    return response
+
+
+@app.route('/add_advert', methods=['GET', 'POST'])
+@login_required
+def add_advert():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        desc = request.form.get('desc')
+        cat = request.form.get('cat')
+        cost = request.form.get('cost')
+        img_url = request.form.get('img_url')
+        user_id = current_user.id
+
+        adv = Advert(title, desc, cat, cost, img_url, user_id)
+
+        adv.save()
+
+        return redirect(url_for('main', id=adv.id))
+
+    return render_template('add_advert.html')
+
+
+@app.route('/advert/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_advert(id):
+    advert = Advert.get_all(id=id)
+    if current_user.id == advert.user_id:
+
+        context = {
+            'advert': advert
+        }
+
+        if request.method == 'POST':
+            new_data = {
+                'title': request.form.get('title'),
+                'description': request.form.get('desc'),
+                'category': request.form.get('cat'),
+                'cost': request.form.get('cost'),
+                'image_url': request.form.get('img_url'),
+                'user_id': current_user.id
+            }
+
+            advert.update(**new_data)
+
+            return redirect(url_for('advert', id=id))
+        return render_template('edit_advert.html', **context)
+    return redirect(url_for('advert', id=id))
+
+
+@app.route('/advert/<int:id>/delete')
+@login_required
+def delete_advert(id):
+    adv = Advert.get_all(id=id)
+    print(adv)
+    if current_user.id == adv.user_id or current_user.admin_status:
+        adv.__delete__()
+        return redirect(url_for('main'))
+    return redirect(url_for('advert', id=id))
+
+
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
 
 
 @app.route('/cart')
