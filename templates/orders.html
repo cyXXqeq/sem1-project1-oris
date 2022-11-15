@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 
 {% block body %}
-    <br><br><br><br>
+    <br><br><br>
+    <a href="{{ url_for('profile') }}" class="link-dark" style="padding-left: 20px; text-decoration: none">
+        ←Back to profile
+    </a>
+    <br>
     <div class="container">
         <center>
             <h3>Orders history</h3>

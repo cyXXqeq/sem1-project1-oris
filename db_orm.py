@@ -47,7 +47,6 @@ class DataBase(ABC):
                     else:
                         request += f"{key} = {limitation} AND "
             request = request[:-5] + ';'
-            print(request)
         try:
             cur = cls.con.cursor()
             if kwargs.get('category') and kwargs.get('search'):
@@ -265,16 +264,18 @@ class Cart(DataBase, DeleteMixin):
 
 
 if __name__ == '__main__':
-    user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)
-    print(user1.__dict__)
-# user2 = User(name='Han', email='han@han.han', password='han')
-# user1.save()
-# user2.save()
-# jojo = User.get_all(name='Jojo')
-# print(User.check_password('jojo', jojo.password))
-# user3 = User(email='test@test.test', password='test')
-# user3.save()
-# print(User.check_password('test', User.get_all(email='test@test.test').password))
-# adverts = Advert.get_all()
-# for adv in adverts:
-#     print(adv.title, adv.description, adv.category, adv.cost, adv.image_url, adv.user_id, adv.id, "----------", sep='\n')
+    gats = User.get_all(id=1)
+    gats.update(password=bcrypt.hashpw('jojo'.encode(), bcrypt.gensalt()).hex())
+
+    # user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)
+    # user2 = User(name='Han', email='han@han.han', password='han')
+    # user1.save()
+    # user2.save()
+    # jojo = User.get_all(name='Jojo')
+    # print(User.check_password('jojo', jojo.password))
+    # user3 = User(email='test@test.test', password='test')
+    # user3.save()
+    # print(User.check_password('test', User.get_all(email='test@test.test').password))
+    # adverts = Advert.get_all()
+    # for adv in adverts:
+    #     print(adv.title, adv.description, adv.category, adv.cost, adv.image_url, adv.user_id, adv.id, "----------", sep='\n')

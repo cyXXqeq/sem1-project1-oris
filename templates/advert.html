@@ -24,12 +24,25 @@
                     <div class="col-sm-8"><span style="white-space: nowrap">Category: {{ advert.category }}</span></div>
                 </div>
                 <br>
-                <button class="btn btn-lg btn-dark text-white" style="width: 100px" data-bs-toggle="modal"
-                        data-bs-target="#buy_modal">Buy
-                </button>
-                <a href="{{ url_for('add_to_cart', page_id=advert.id) }}" class="btn btn-lg btn-light">Add to cart</a>
-                <a href="{{ url_for('add_to_favorites', page_id=advert.id) }}" class="btn btn-lg btn-light">Add to
-                    favorite</a>
+
+                {% if advert.is_active %}
+                    <button class="btn btn-lg btn-dark" style="width: 100px" data-bs-toggle="modal"
+                            data-bs-target="#buy_modal">Buy
+                    </button>
+
+                    {% if not in_cart %}
+                        <button class="btn btn-lg btn-light" data-bs-toggle="modal" data-bs-target="#cart_modal">
+                            Add to cart
+                        </button>
+                    {% endif %}
+
+                    {% if not in_favorite %}
+                        <button class="btn btn-lg btn-light" data-bs-toggle="modal" data-bs-target="#favorite_modal">
+                            Add to favorite
+                        </button>
+                    {% endif %}
+                {% endif %}
+
                 <br><br>
                 <h5>Description</h5>
                 <p>{{ advert.description }}</p>
@@ -39,7 +52,7 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Modals -->
     <div class="modal fade" id="buy_modal" tabindex="-1" aria-labelledby="buy_modal_label" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -53,6 +66,50 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-success">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="cart_modal" tabindex="-1" aria-labelledby="cart_modal_label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="cart_modal_label">Add to cart</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Would you like to add an advert to the cart?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Close
+                    </button>
+                    <a href="{{ url_for('add_to_cart', page_id=advert.id) }}" class="btn btn-success">
+                        Confirm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="favorite_modal" tabindex="-1" aria-labelledby="favorite_modal_label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="favorite_modal_label">Making an order</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Would you like to add an advert to your favorites?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Close
+                    </button>
+                    <a href="{{ url_for('add_to_favorites', page_id=advert.id) }}" class="btn btn-success">
+                        Confirm
+                    </a>
                 </div>
             </div>
         </div>

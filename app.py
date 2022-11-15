@@ -1,3 +1,4 @@
+import bcrypt
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
@@ -65,7 +66,9 @@ def advert(page_id):
     context = {
         'advert': adv,
         'owner': owner,
-        'categories': categories
+        'categories': categories,
+        'in_cart': True if Cart.get_all(user_id=current_user.id, advert_id=page_id) else False,
+        'in_favorite': True if Favorite.get_all(user_id=current_user.id, advert_id=page_id) else False
     }
     return render_template('advert.html', **context)
 
@@ -264,13 +267,18 @@ def edit_profile():
         if image_url:
             new_data['image_url'] = image_url
 
-        if password:
-            if password == password_retype:
-                new_data['password'] = password
-            else:
-                flash("Passwords don't match!")
-
         if new_data['email']:
+            if password:
+                if password_retype:
+                    if password == password_retype:
+                        new_data['password'] = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).hex()
+                    else:
+                        flash("Passwords don't match!")
+                        return render_template('edit_profile.html', **context)
+                else:
+                    flash("Enter password retype!")
+                    return render_template('edit_profile.html', **context)
+
             current_user.update(**new_data)
 
             return redirect(url_for('profile'))
@@ -307,8 +315,9 @@ def cart():
 @app.route('/advert/<int:page_id>/add_to_cart')
 @login_required
 def add_to_cart(page_id):
-    adv_in_cart = Cart(current_user.id, page_id)
-    adv_in_cart.save()
+    if not Cart.get_all(user_id=current_user.id, advert_id=page_id):
+        adv_in_cart = Cart(current_user.id, page_id)
+        adv_in_cart.save()
     return redirect(url_for('advert', page_id=page_id))
 
 
@@ -316,7 +325,6 @@ def add_to_cart(page_id):
 @login_required
 def delete_from_cart(adv_id):
     adv_in_cart = Cart.get_all(user_id=current_user.id, advert_id=adv_id)
-    print(adv_in_cart.advert_id, adv_in_cart.user_id)
     adv_in_cart.delete()
     return redirect(url_for('cart'))
 
@@ -348,9 +356,18 @@ def favorites():
 @app.route('/advert/<int:page_id>/add_to_favorites')
 @login_required
 def add_to_favorites(page_id):
-    adv_to_favorites = Favorite(current_user.id, page_id)
-    adv_to_favorites.save()
+    if not Favorite.get_all(user_id=current_user.id, advert_id=page_id):
+        adv_to_favorites = Favorite(current_user.id, page_id)
+        adv_to_favorites.save()
     return redirect(url_for('advert', page_id=page_id))
+
+
+@app.route('/favorites/delete/<int:adv_id>')
+@login_required
+def delete_from_favorites(adv_id):
+    adv_in_fav = Favorite.get_all(user_id=current_user.id, advert_id=adv_id)
+    adv_in_fav.delete()
+    return redirect(url_for('favorites'))
 
 
 @app.route('/make_order')
