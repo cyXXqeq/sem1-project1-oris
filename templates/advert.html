@@ -5,8 +5,7 @@
         adverts</a>
     {% if current_user.is_authenticated and current_user.id == advert.user_id %}
         <span style="padding-left: 70%">
-        <a href="{{ url_for('edit_advert', page_id=advert.id) }}" class="btn"
-           style="background-color: lightgray">Edit</a>
+        <a href="{{ url_for('edit_advert', page_id=advert.id) }}" class="btn btn-light">Edit</a>
         <button class="btn btn-danger" onclick="checkDeleteAdvert({{ advert.id }})">Delete</button>
     </span>
     {% endif %}
@@ -28,8 +27,9 @@
                 <button class="btn btn-lg btn-dark text-white" style="width: 100px" data-bs-toggle="modal"
                         data-bs-target="#buy_modal">Buy
                 </button>
-                <a href="{{ url_for('add_to_cart', page_id=advert.id) }}" class="btn btn-lg" style="background-color: lightgray">Add to cart</a>
-                <a href="{{ url_for('add_to_favorites', page_id=advert.id) }}" class="btn btn-lg" style="background-color: lightgray">Add to favorite</a>
+                <a href="{{ url_for('add_to_cart', page_id=advert.id) }}" class="btn btn-lg btn-light">Add to cart</a>
+                <a href="{{ url_for('add_to_favorites', page_id=advert.id) }}" class="btn btn-lg btn-light">Add to
+                    favorite</a>
                 <br><br>
                 <h5>Description</h5>
                 <p>{{ advert.description }}</p>
