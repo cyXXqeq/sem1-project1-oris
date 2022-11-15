@@ -321,11 +321,13 @@ def add_to_cart(page_id):
     return redirect(url_for('advert', page_id=page_id))
 
 
-@app.route('/cart/delete/<int:adv_id>')
+@app.route('/cart/delete/<int:adv_id>/<int:from_advert>')
 @login_required
-def delete_from_cart(adv_id):
+def delete_from_cart(adv_id, from_advert):
     adv_in_cart = Cart.get_all(user_id=current_user.id, advert_id=adv_id)
     adv_in_cart.delete()
+    if from_advert:
+        return redirect(url_for('advert', page_id=adv_id))
     return redirect(url_for('cart'))
 
 
@@ -362,11 +364,13 @@ def add_to_favorites(page_id):
     return redirect(url_for('advert', page_id=page_id))
 
 
-@app.route('/favorites/delete/<int:adv_id>')
+@app.route('/favorites/delete/<int:adv_id>/<int:from_advert>')
 @login_required
-def delete_from_favorites(adv_id):
+def delete_from_favorites(adv_id, from_advert):
     adv_in_fav = Favorite.get_all(user_id=current_user.id, advert_id=adv_id)
     adv_in_fav.delete()
+    if from_advert:
+        return redirect(url_for('advert', page_id=adv_id))
     return redirect(url_for('favorites'))
 
 

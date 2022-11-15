@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block body %}
     <br><br><br>
+{#    {% if from %}#}
     <a href="{{ url_for('main') }}" class="link-dark" style="padding-left: 20px; text-decoration: none">←More
         adverts</a>
     {% if current_user.is_authenticated and current_user.id == advert.user_id %}
@@ -30,17 +31,21 @@
                             data-bs-target="#buy_modal">Buy
                     </button>
 
-                    {% if not in_cart %}
-                        <button class="btn btn-lg btn-light" data-bs-toggle="modal" data-bs-target="#cart_modal">
+                    <button class="btn btn-lg btn-light" data-bs-toggle="modal" data-bs-target="#cart_modal">
+                        {% if not in_cart %}
                             Add to cart
-                        </button>
-                    {% endif %}
+                        {% else %}
+                            Delete from cart
+                        {% endif %}
+                    </button>
 
-                    {% if not in_favorite %}
-                        <button class="btn btn-lg btn-light" data-bs-toggle="modal" data-bs-target="#favorite_modal">
+                    <button class="btn btn-lg btn-light" data-bs-toggle="modal" data-bs-target="#favorite_modal">
+                        {% if not in_favorite %}
                             Add to favorite
-                        </button>
-                    {% endif %}
+                        {% else %}
+                            Delete from favorite
+                        {% endif %}
+                    </button>
                 {% endif %}
 
                 <br><br>
@@ -75,19 +80,36 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="cart_modal_label">Add to cart</h1>
+                    <h1 class="modal-title fs-5" id="cart_modal_label">
+                        {% if not in_cart %}
+                            Add to cart
+                        {% else %}
+                            Delete from cart
+                        {% endif %}
+                    </h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Would you like to add an advert to the cart?
+                    {% if not in_cart %}
+                        Would you like to add an advert to the cart?
+                    {% else %}
+                        Would you like to delete an advert from the cart?
+                    {% endif %}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         Close
                     </button>
-                    <a href="{{ url_for('add_to_cart', page_id=advert.id) }}" class="btn btn-success">
-                        Confirm
-                    </a>
+                    {% if not in_cart %}
+                        <a href="{{ url_for('add_to_cart', page_id=advert.id) }}" class="btn btn-success">
+                            Confirm
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('delete_from_cart', adv_id=advert.id, from_advert=1) }}"
+                           class="btn btn-danger">
+                            Delete
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -97,19 +119,36 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="favorite_modal_label">Making an order</h1>
+                    <h1 class="modal-title fs-5" id="favorite_modal_label">
+                        {% if not in_favorite %}
+                            Add to favorites
+                        {% else %}
+                            Delete from favorites
+                        {% endif %}
+                    </h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Would you like to add an advert to your favorites?
+                    {% if not in_favorite %}
+                        Would you like to add an advert to your favorites?
+                    {% else %}
+                        Would you like to delete an advert from your favorites?
+                    {% endif %}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         Close
                     </button>
-                    <a href="{{ url_for('add_to_favorites', page_id=advert.id) }}" class="btn btn-success">
-                        Confirm
-                    </a>
+                    {% if not in_favorite %}
+                        <a href="{{ url_for('add_to_favorites', page_id=advert.id) }}" class="btn btn-success">
+                            Confirm
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('delete_from_favorites', adv_id=advert.id, from_advert=1) }}"
+                           class="btn btn-danger">
+                            Delete
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

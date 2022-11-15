@@ -17,7 +17,7 @@
                             <li class="list-group-item">
                                 {{ advert.title }}
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                    <a href="{{ url_for('delete_from_cart', adv_id=advert.id) }}"
+                                    <a href="{{ url_for('delete_from_cart', adv_id=advert.id, from_advert=0) }}"
                                        class="btn btn-danger">Delete</a>
                                 </div>
                             </li>

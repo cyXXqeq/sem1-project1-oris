@@ -239,7 +239,7 @@ class Purchase(DataBase):
         super().save("INSERT INTO purchases VALUES (%s, %s);", [self.advert_id, self.order_id])
 
 
-class Favorite(DataBase):
+class Favorite(DataBase, DeleteMixin):
     name = 'favorites'
 
     def __init__(self, user_id, advert_id):
