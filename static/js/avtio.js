@@ -4,9 +4,14 @@ function checkDeleteAdvert(id) {
         window.location.replace('/advert/' + id + '/delete')
     }
 }
+
 function checkDeleteProfile() {
     let text = 'Are you sure you want to delete the profile?'
     if (confirm(text)) {
         window.location.replace('/profile/delete')
     }
 }
+
+$('#myModal').on('shown.bs.modal', function () {
+    $('#myInput').trigger('focus')
+})

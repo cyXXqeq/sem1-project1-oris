@@ -33,7 +33,7 @@ class DataBase(ABC):
                 elif key == 'category' and value:
                     request += "category = %s AND "
                 elif key == 'search' and value:
-                    request += "UPPER(title) LIKE UPPER(%s) OR UPPER(description) LIKE UPPER(%s) AND "
+                    request += "(UPPER(title) LIKE UPPER(%s) OR UPPER(description) LIKE UPPER(%s)) AND "
                 else:
                     if key == 'category':
                         continue
@@ -194,8 +194,7 @@ class Order(DataBase):
         if self.id:
             print('Cannot save existing object, use update function')
         else:
-            request = f"INSERT INTO orders VALUES ('{self.summa}', '{self.user_id}');"
-            super().save(request)
+            super().save("INSERT INTO orders VALUES (%s, %s);", [self.summa, self.user_id])
             orders = Order.get_all()
             if isinstance(orders, Order):
                 self.id = orders.id
@@ -212,9 +211,7 @@ class Purchase(DataBase):
         self.order_id = order_id
 
     def save(self):
-        super().save(
-            f"INSERT INTO purchases VALUES ('{self.advert_id}', '{self.order_id}');"
-        )
+        super().save("INSERT INTO purchases VALUES (%s, %s);", [self.advert_id, self.order_id])
 
 
 class Favorite(DataBase):
@@ -226,23 +223,20 @@ class Favorite(DataBase):
         self.advert_id = advert_id
 
     def save(self):
-        super().save(
-            f"INSERT INTO favorites VALUES ('{self.user_id}', '{self.advert_id}');"
-        )
+        super().save("INSERT INTO favorites VALUES (%s, %s);", [self.user_id, self.advert_id])
 
 
-class Cart(DataBase):
+class Cart(DataBase, DeleteMixin):
     name = 'cart'
 
-    def __init__(self, user_id, advert_id):
+    def __init__(self, user_id, advert_id, count=1):
         super().__init__()
         self.user_id = user_id
         self.advert_id = advert_id
+        self.count = count
 
     def save(self):
-        super().save(
-            f"INSERT INTO cart VALUES ('{self.user_id}', '{self.advert_id}');"
-        )
+        super().save("INSERT INTO cart VALUES (%s, %s, %s);", [self.user_id, self.advert_id, self.count])
 
 # if __name__ == '__main__':
 # user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)

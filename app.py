@@ -44,7 +44,6 @@ def main():
         'category': category,
         'search': search
     }
-    print(filters.items())
 
     adverts = Advert.get_all(**filters)
     if not isinstance(adverts, list):
@@ -76,7 +75,7 @@ def advert(page_id):
 def register():
     name = request.form.get('name')
     email = request.form.get('email')
-    image_url = request.form.get('image_urlL')
+    image_url = request.form.get('image_url')
     context = {'categories': categories}
 
     for field, field_name in [(name, 'name'), (email, 'email'), (image_url, 'image_url')]:
@@ -96,7 +95,7 @@ def register():
                 if User.get_all(email=email):
                     flash('Have user with this email')
                 else:
-                    user = User(email, password, name)
+                    user = User(email, password, name, image_url)
                     user.save()
 
                     return redirect(url_for('login'))
@@ -283,20 +282,68 @@ def edit_profile():
 
 
 @app.route('/cart')
+@login_required
 def cart():
-    return render_template('cart.html')
+    in_cart = Cart.get_all(user_id=current_user.id)
+    advs_in_cart = [Advert.get_all(id=adv_id) for adv_id in in_cart]
+
+    return render_template('cart.html', adverts=advs_in_cart)
+
+
+@app.route('/advert/<int:page_id>/add_to_cart')
+@login_required
+def add_to_cart(page_id):
+    adv_in_cart = Cart(current_user.id, page_id)
+    adv_in_cart.save()
+    return redirect(url_for('advert', page_id=page_id))
+
 
 
 @app.route('/favorites')
 @login_required
 def favorites():
-    pass
+    search = request.args.get('search')
+    if not search:
+        search = ''
+    in_favorites = Favorite.get_all(user_id=current_user.id)
+    advs_in_favorites = []
+    for adv_in_fav in in_favorites:
+        advs = Advert.get_all(id=adv_in_fav.advert_id, search=search)
+        if not isinstance(advs, list):
+            advs = [advs]
+        advs_in_favorites += advs
+    return render_template('favorites.html', adverts=advs_in_favorites)
+
+
+@app.route('/advert/<int:page_id>/add_to_favorites')
+@login_required
+def add_to_favorites(page_id):
+    adv_to_favorites = Favorite(current_user.id, page_id)
+    adv_to_favorites.save()
+    return redirect(url_for('advert', page_id=page_id))
+
+
+@app.route('/make_order')
+@login_required
+def make_order():
+    advs_in_cart = Cart.get_all(user_id=current_user.id)
+    advs = [Advert.get_all(id=adv_in_cart.advert_id) for adv_in_cart in advs_in_cart]
+    summa = sum([adv.cost for adv in advs])
+    order = Order(summa, current_user.id)
+    order.save()
+
+    for adv in advs:
+        purch = Purchase(adv.id, order.id)
+        purch.save()
+
+    for adv in advs_in_cart:
+        adv.delete()
 
 
 @app.route('/orders')
 @login_required
 def orders():
-    pass
+    return render_template('orders.html')
 
 
 if __name__ == '__main__':
