@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block body %}
+    <br><br><br><br><br>
+    <div class="container">
+        <div class="row" style="padding-left: 20%; width: 85%">
+            <h1>Cart</h1>
+            <hr>
+            <div class="col-sm-6">
+                <div class="card" style="width: 24rem;">
+                    <ul class="list-group list-group-flush">
+                        {% for advert in adverts %}
+                            <li class="list-group-item">
+                                {{ advert.title }}
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{{ url_for('delete_from_cart', adv_id=advert.id) }}"
+                                       class="btn btn-danger">Delete</a>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <h4>Total: {{ summa }} rub</h4>
+                <a href="{{ url_for('make_order') }}" class="btn btn-dark">Confirm order</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -25,7 +25,12 @@ class DataBase(ABC):
             request += f" WHERE "
             for key, value in kwargs.items():
                 if key == 'id':
-                    limitation = kwargs[key]
+                    limitation = value
+                elif key == 'is_active':
+                    if value:
+                        limitation = 'true'
+                    else:
+                        limitation = 'false'
                 else:
                     limitation = f"'{value}'"
                 if limitation == "'not null'":
@@ -42,6 +47,7 @@ class DataBase(ABC):
                     else:
                         request += f"{key} = {limitation} AND "
             request = request[:-5] + ';'
+            print(request)
         try:
             cur = cls.con.cursor()
             if kwargs.get('category') and kwargs.get('search'):
@@ -95,7 +101,19 @@ class DataBase(ABC):
 class DeleteMixin:
     def delete(self):
         try:
-            self.cur.execute(f"DELETE FROM {self.__class__.name} WHERE id = %s", [self.id])
+            if 'id' in self.__dict__:
+                self.cur.execute(f"DELETE FROM {self.__class__.name} WHERE id = %s", [self.id])
+            else:
+                request = f"DELETE FROM {self.__class__.name} WHERE "
+                values = []
+
+                for key, value in self.__dict__.items():
+                    if key in ['user_id', 'advert_id', 'order_id']:
+                        request += f"{key} = %s AND "
+                        values.append(value)
+
+                request = request[:-5] + ';'
+                self.cur.execute(request, values)
             self.con.commit()
         except Exception as ex:
             print(ex)
@@ -147,10 +165,10 @@ class User(DataBase, UserMixin, DeleteMixin):
         return bcrypt.checkpw(password.encode(), bytes.fromhex(hash_password))
 
 
-class Advert(DataBase, DeleteMixin):
+class Advert(DataBase):
     name = 'adverts'
 
-    def __init__(self, title, description, category, cost, image_url, user_id, id=None):
+    def __init__(self, title, description, category, cost, image_url, user_id, id=None, is_active=True):
         super().__init__()
         self.title = title
         self.description = description
@@ -159,6 +177,7 @@ class Advert(DataBase, DeleteMixin):
         self.image_url = image_url
         self.user_id = user_id
         self.id = id
+        self.is_active = is_active
 
     def save(self):
         if self.id:
@@ -175,31 +194,38 @@ class Advert(DataBase, DeleteMixin):
             ]
             super().save(request, data)
             adverts = Advert.get_all()
-            if isinstance(adverts, Advert):
-                self.id = adverts.id
-            else:
-                self.id = adverts[-1].id
+            if isinstance(adverts, list):
+                adverts = adverts[-1]
+            self.id = adverts.id
+            self.is_active = adverts.is_active
+
+    def hidden(self):
+        self.cur.execute(f"UPDATE adverts SET is_active = false WHERE id = {self.id}")
+        self.con.commit()
 
 
 class Order(DataBase):
     name = 'orders'
 
-    def __init__(self, summa, user_id, id=None):
+    def __init__(self, summa, user_id, id=None, created_date=None):
         super().__init__()
         self.summa = summa
         self.user_id = user_id
         self.id = id
+        self.created_date = created_date
 
     def save(self):
         if self.id:
             print('Cannot save existing object, use update function')
         else:
             super().save("INSERT INTO orders VALUES (%s, %s);", [self.summa, self.user_id])
-            orders = Order.get_all()
-            if isinstance(orders, Order):
-                self.id = orders.id
-            else:
-                self.id = orders[-1].id
+            order = Order.get_all()
+
+            if isinstance(order, list):
+                order = order[-1]
+
+            self.id = order.id
+            self.created_date = order.created_date
 
 
 class Purchase(DataBase):
@@ -229,17 +255,18 @@ class Favorite(DataBase):
 class Cart(DataBase, DeleteMixin):
     name = 'cart'
 
-    def __init__(self, user_id, advert_id, count=1):
+    def __init__(self, user_id, advert_id):
         super().__init__()
         self.user_id = user_id
         self.advert_id = advert_id
-        self.count = count
 
     def save(self):
-        super().save("INSERT INTO cart VALUES (%s, %s, %s);", [self.user_id, self.advert_id, self.count])
+        super().save("INSERT INTO cart VALUES (%s, %s);", [self.user_id, self.advert_id])
 
-# if __name__ == '__main__':
-# user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)
+
+if __name__ == '__main__':
+    user1 = User(name='Jojo', email='pro@pro.pro', password='jojo', admin_status=True)
+    print(user1.__dict__)
 # user2 = User(name='Han', email='han@han.han', password='han')
 # user1.save()
 # user2.save()

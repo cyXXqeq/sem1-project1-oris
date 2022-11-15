@@ -33,6 +33,7 @@ if __name__ == '__main__':
                image_url   text,
                user_id     integer,
                id          serial           NOT NULL UNIQUE,
+               is_active   boolean default true,
                PRIMARY KEY (id),
                CONSTRAINT fk_user
                    FOREIGN KEY (user_id)
@@ -42,14 +43,15 @@ if __name__ == '__main__':
            
            create table orders
            (
-               summa   double precision NOT NULL,
-               user_id integer          NOT NULL,
-               id      serial           NOT NULL UNIQUE,
-               PRIMARY KEY (id),
-               CONSTRAINT fk_user
-                   FOREIGN KEY (user_id)
-                       REFERENCES users (id)
-                       ON DELETE CASCADE
+                summa      double precision NOT NULL,
+                user_id    integer          NOT NULL,
+                id         serial           NOT NULL UNIQUE,
+                created_at date default current_date,
+                PRIMARY KEY (id),
+                CONSTRAINT fk_user
+                    FOREIGN KEY (user_id)
+                        REFERENCES users (id)
+                        ON DELETE CASCADE
            );
            
            create table purchases

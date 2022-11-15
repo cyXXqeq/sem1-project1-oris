@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from db_orm import User, Advert, Order, Purchase, Favorite, Cart
@@ -30,17 +30,13 @@ def home():
     return redirect('/adverts')
 
 
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
-
 @app.route('/adverts', methods=['GET'])
 def main():
     category = request.args.get('category')
     search = request.args.get('search')
     filters = {
         'user_id': 'not null',
+        'is_active': True,
         'category': category,
         'search': search
     }
@@ -62,7 +58,10 @@ def main():
 @app.route('/advert/<int:page_id>/')
 def advert(page_id):
     adv = Advert.get_all(id=page_id)
-    owner = User.get_all(id=adv.user_id).name
+    if adv.user_id:
+        owner = User.get_all(id=adv.user_id).name
+    else:
+        owner = '<deleted account>'
     context = {
         'advert': adv,
         'owner': owner,
@@ -232,7 +231,7 @@ def delete_advert(page_id):
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html')
+    return render_template('profile.html', categories=categories)
 
 
 @app.route('/profile/delete')
@@ -285,9 +284,24 @@ def edit_profile():
 @login_required
 def cart():
     in_cart = Cart.get_all(user_id=current_user.id)
-    advs_in_cart = [Advert.get_all(id=adv_id) for adv_id in in_cart]
+    if not isinstance(in_cart, list):
+        in_cart = [in_cart]
+    advs_in_cart = []
+    for adv_in_cart in in_cart:
+        advs = Advert.get_all(id=adv_in_cart.advert_id)
+        if not isinstance(advs, list):
+            advs = [advs]
+        advs_in_cart += advs
 
-    return render_template('cart.html', adverts=advs_in_cart)
+    summa = sum([adv.cost for adv in advs_in_cart])
+
+    context = {
+        'adverts': advs_in_cart,
+        'summa': summa,
+        'categories': categories
+    }
+
+    return render_template('cart.html', **context)
 
 
 @app.route('/advert/<int:page_id>/add_to_cart')
@@ -298,6 +312,14 @@ def add_to_cart(page_id):
     return redirect(url_for('advert', page_id=page_id))
 
 
+@app.route('/cart/delete/<int:adv_id>')
+@login_required
+def delete_from_cart(adv_id):
+    adv_in_cart = Cart.get_all(user_id=current_user.id, advert_id=adv_id)
+    print(adv_in_cart.advert_id, adv_in_cart.user_id)
+    adv_in_cart.delete()
+    return redirect(url_for('cart'))
+
 
 @app.route('/favorites')
 @login_required
@@ -306,13 +328,21 @@ def favorites():
     if not search:
         search = ''
     in_favorites = Favorite.get_all(user_id=current_user.id)
+    if not isinstance(in_favorites, list):
+        in_favorites = [in_favorites]
     advs_in_favorites = []
     for adv_in_fav in in_favorites:
         advs = Advert.get_all(id=adv_in_fav.advert_id, search=search)
         if not isinstance(advs, list):
             advs = [advs]
         advs_in_favorites += advs
-    return render_template('favorites.html', adverts=advs_in_favorites)
+
+    context = {
+        'adverts': advs_in_favorites,
+        'categories': categories
+    }
+
+    return render_template('favorites.html', **context)
 
 
 @app.route('/advert/<int:page_id>/add_to_favorites')
@@ -327,6 +357,10 @@ def add_to_favorites(page_id):
 @login_required
 def make_order():
     advs_in_cart = Cart.get_all(user_id=current_user.id)
+
+    if not isinstance(advs_in_cart, list):
+        advs_in_cart = [advs_in_cart]
+
     advs = [Advert.get_all(id=adv_in_cart.advert_id) for adv_in_cart in advs_in_cart]
     summa = sum([adv.cost for adv in advs])
     order = Order(summa, current_user.id)
@@ -335,15 +369,52 @@ def make_order():
     for adv in advs:
         purch = Purchase(adv.id, order.id)
         purch.save()
+        adv.hidden()
 
-    for adv in advs_in_cart:
-        adv.delete()
+    for adv_in_cart in advs_in_cart:
+        adv_in_cart.delete()
+
+    return redirect(url_for('orders_page'))
 
 
 @app.route('/orders')
 @login_required
-def orders():
-    return render_template('orders.html')
+def orders_page():
+    orders = Order.get_all(user_id=current_user.id)
+    if not isinstance(orders, list):
+        orders = [orders]
+
+    # orders_with_adv = []
+    #
+    # for order in orders:
+    #     purchases = Purchase.get_all(order_id=order.id)
+    #     advs = [Advert.get_all(id=purch.advert.id) for purch in purchases]
+    #     orders_with_adv.append((order, advs))
+
+    context = {
+        'orders': orders[::-1],
+        'categories': categories
+    }
+
+    return render_template('orders.html', **context)
+
+
+@app.route('/orders/<int:page_id>')
+@login_required
+def order_page(page_id):
+    order = Order.get_all(id=page_id)
+    purchases = Purchase.get_all(order_id=order.id)
+    if not isinstance(purchases, list):
+        purchases = [purchases]
+    advs = [Advert.get_all(id=purch.advert_id) for purch in purchases]
+
+    context = {
+        'order': order,
+        'adverts': advs,
+        'categories': categories
+    }
+
+    return render_template('order.html', **context)
 
 
 if __name__ == '__main__':
